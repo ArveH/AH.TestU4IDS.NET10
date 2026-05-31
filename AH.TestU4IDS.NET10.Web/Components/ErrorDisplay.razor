@@ -1,0 +1,55 @@
+@using AH.TestU4IDS.NET10.Web.Services
+@using Microsoft.AspNetCore.WebUtilities
+@implements IDisposable
+@inject ErrorService ErrorService
+@inject NavigationManager NavigationManager
+
+@if (!string.IsNullOrWhiteSpace(_message))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <strong>Error:</strong> @_message
+        <a href="/" class="btn-close" aria-label="Close"></a>
+    </div>
+}
+
+@code {
+    private string? _message;
+    private Action? _unsubscribe;
+
+    protected override void OnInitialized()
+    {
+        _unsubscribe = ErrorService.Subscribe(OnErrorChanged);
+        ReadCurrentError();
+    }
+
+    protected override void OnParametersSet()
+    {
+        ReadCurrentError();
+    }
+
+    private void ReadCurrentError()
+    {
+        // Prefer an error passed via the redirect query string (survives request scope
+        // changes and works under static server-side rendering).
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("authError", out var authError)
+            && !string.IsNullOrWhiteSpace(authError))
+        {
+            _message = authError.ToString();
+            return;
+        }
+
+        _message = ErrorService.ErrorMessage;
+    }
+
+    private void OnErrorChanged()
+    {
+        ReadCurrentError();
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        _unsubscribe?.Invoke();
+    }
+}

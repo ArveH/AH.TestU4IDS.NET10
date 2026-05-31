@@ -1,5 +1,7 @@
 using AH.TestU4IDS.NET10.Web;
 using AH.TestU4IDS.NET10.Web.Components;
+using AH.TestU4IDS.NET10.Web.Middleware;
+using AH.TestU4IDS.NET10.Web.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -51,10 +53,35 @@ builder.Services.AddAuthentication(options =>
             }
             return Task.CompletedTask;
         };
+
+        options.Events.OnAuthenticationFailed = context =>
+        {
+            var errorService = context.HttpContext.RequestServices.GetRequiredService<ErrorService>();
+            var errorMessage = context.Exception?.Message ?? "An error occurred during authentication.";
+            errorService.SetError($"Login failed: {errorMessage}");
+
+            context.HandleResponse();
+            context.Response.Redirect("/");
+            return Task.CompletedTask;
+        };
+
+        options.Events.OnRemoteFailure = context =>
+        {
+            var errorService = context.HttpContext.RequestServices.GetRequiredService<ErrorService>();
+            var errorMessage = context.Failure?.Message ?? context.Request.Query["error"].ToString() ?? "An error occurred during authentication.";
+            errorService.SetError($"Login failed: {errorMessage}");
+
+            context.HandleResponse();
+            context.Response.Redirect("/");
+            return Task.CompletedTask;
+        };
     });
 
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
+
+// Add error service for global error handling
+builder.Services.AddScoped<ErrorService>();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -68,6 +95,9 @@ builder.Services.AddHttpClient<WeatherApiClient>(client =>
     });
 
 var app = builder.Build();
+
+// Add custom exception handling middleware
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 if (!app.Environment.IsDevelopment())
 {
