@@ -1,10 +1,60 @@
 using AH.TestU4IDS.NET10.Web;
 using AH.TestU4IDS.NET10.Web.Components;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add service defaults & Aspire client integrations.
 builder.AddServiceDefaults();
+
+var oidcSettings = builder.Configuration
+    .GetSection(OpenIdConnectSettings.SectionName)
+    .Get<OpenIdConnectSettings>() ?? new OpenIdConnectSettings();
+
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+    })
+    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
+    {
+        options.Authority = oidcSettings.Authority;
+        options.ClientId = oidcSettings.ClientId;
+        options.ClientSecret = oidcSettings.ClientSecret;
+        options.ResponseType = "code";
+
+        options.SaveTokens = true;
+        options.GetClaimsFromUserInfoEndpoint = true;
+
+        options.Scope.Clear();
+        foreach (var scope in oidcSettings.Scopes)
+        {
+            options.Scope.Add(scope);
+        }
+
+        // Map the name claim so User.Identity.Name resolves from the id token.
+        options.TokenValidationParameters.NameClaimType = "name";
+
+        options.Events.OnRedirectToIdentityProvider = context =>
+        {
+            if (context.ProtocolMessage.RequestType == OpenIdConnectRequestType.Authentication)
+            {
+               context.ProtocolMessage.AcrValues = $"tenant:{oidcSettings.Tenant}";
+                if (!string.IsNullOrWhiteSpace(oidcSettings.IdpName))
+                {
+                    context.ProtocolMessage.AcrValues += $" loginidp:{oidcSettings.IdpName}";
+                }
+            }
+            return Task.CompletedTask;
+        };
+    });
+
+builder.Services.AddAuthorization();
+builder.Services.AddCascadingAuthenticationState();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -32,6 +82,9 @@ app.UseHttpsRedirection();
 
 app.UseAntiforgery();
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.UseOutputCache();
 
 app.MapStaticAssets();
@@ -39,6 +92,18 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
+// Endpoints used by the UI to trigger the OIDC login/logout challenges.
+app.MapGet("/authentication/login", (string? returnUrl) =>
+    Results.Challenge(new AuthenticationProperties
+    {
+        RedirectUri = string.IsNullOrWhiteSpace(returnUrl) ? "/" : returnUrl
+    }));
+
+app.MapPost("/authentication/logout", () =>
+    Results.SignOut(new AuthenticationProperties { RedirectUri = "/" },
+        [CookieAuthenticationDefaults.AuthenticationScheme, OpenIdConnectDefaults.AuthenticationScheme]))
+    .RequireAuthorization();
+
 app.MapDefaultEndpoints();
 
-app.Run();
+await app.RunAsync();
