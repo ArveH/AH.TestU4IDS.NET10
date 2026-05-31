@@ -1,0 +1,6 @@
+@AH.TestU4IDS.NET10.ParentAPI_HostAddress = http://localhost:5252
+
+GET {{AH.TestU4IDS.NET10.ParentAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -9,4 +9,7 @@ builder.AddProject<Projects.AH_TestU4IDS_NET10_Web>("webfrontend")
     .WithReference(apiService)
     .WaitFor(apiService);
 
+builder.AddProject<Projects.AH_TestU4IDS_NET10_ParentAPI>("ah-testu4ids-net10-parentapi")
+    .WithHttpHealthCheck("/health");
+
 builder.Build().Run();
