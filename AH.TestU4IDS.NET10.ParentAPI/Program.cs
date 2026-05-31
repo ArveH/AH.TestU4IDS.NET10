@@ -1,3 +1,5 @@
+using AH.TestU4IDS.NET10.ParentAPI;
+using Duende.IdentityModel.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.IdentityModel.Tokens;
@@ -63,6 +65,22 @@ builder.Services.AddAuthorizationBuilder()
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+builder.Services.AddOptions<AgentDelegationOptions>()
+    .Bind(builder.Configuration.GetSection(AgentDelegationOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
+builder.Services.AddHttpClient("Authority");
+
+// Cached OpenID Connect discovery document for the authority.
+builder.Services.AddSingleton(sp =>
+{
+    var authority = builder.Configuration["JwtSettings:Authority"]
+        ?? throw new InvalidOperationException("JwtSettings:Authority is not configured.");
+    var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+    return new DiscoveryCache(authority, () => httpClientFactory.CreateClient("Authority"));
+});
 
 builder.Services.AddHttpClient("WeatherApi", client =>
 {
