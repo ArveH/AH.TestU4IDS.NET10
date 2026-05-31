@@ -86,6 +86,9 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 
+// Add HTTP context accessor for token retrieval in services
+builder.Services.AddHttpContextAccessor();
+
 // Add error service for global error handling
 builder.Services.AddScoped<ErrorService>();
 

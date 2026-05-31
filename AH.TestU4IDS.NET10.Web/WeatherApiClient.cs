@@ -2,14 +2,23 @@ namespace AH.TestU4IDS.NET10.Web;
 
 using System.Net;
 using System.Net.Http.Json;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
-public class WeatherApiClient(HttpClient httpClient, ILogger<WeatherApiClient> logger)
+public class WeatherApiClient(HttpClient httpClient, IHttpContextAccessor httpContextAccessor, ILogger<WeatherApiClient> logger)
 {
     public async Task<WeatherForecast[]> GetWeatherAsync(int maxItems = 10, CancellationToken cancellationToken = default)
     {
         try
         {
+            // Get the access token from the current user's authentication ticket
+            var accessToken = await httpContextAccessor.HttpContext?.GetTokenAsync("access_token");
+            if (!string.IsNullOrWhiteSpace(accessToken))
+            {
+                httpClient.DefaultRequestHeaders.Authorization = new("Bearer", accessToken);
+            }
+
             List<WeatherForecast>? forecasts = null;
 
             await foreach (var forecast in httpClient.GetFromJsonAsAsyncEnumerable<WeatherForecast>("/weatherforecast", cancellationToken))

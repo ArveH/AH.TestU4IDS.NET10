@@ -24,8 +24,14 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy("ParentApiScope", policy =>
         policy.RequireAssertion(context =>
         {
-            var claim = context.User.FindFirst("scope");
-            return claim != null && claim.Value.Split(' ').Contains(requiredScope);
+            if (string.IsNullOrWhiteSpace(requiredScope))
+            {
+                return false;
+            }
+
+            return context.User.FindAll("scope")
+                .SelectMany(claim => claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                .Contains(requiredScope, StringComparer.Ordinal);
         }));
 
 builder.Services.AddControllers();
