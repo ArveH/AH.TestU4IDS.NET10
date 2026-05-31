@@ -29,7 +29,19 @@ public static class Extensions
         builder.Services.ConfigureHttpClientDefaults(http =>
         {
             // Turn on resilience by default
-            http.AddStandardResilienceHandler();
+            http.AddStandardResilienceHandler(options =>
+            {
+                // The Standard handler defaults to a 10s per-attempt timeout, which is
+                // too aggressive when stepping through code. Relax the timeouts only
+                // when a debugger is attached so production behaviour is unchanged.
+                if (System.Diagnostics.Debugger.IsAttached)
+                {
+                    options.AttemptTimeout.Timeout = TimeSpan.FromMinutes(5);
+                    options.TotalRequestTimeout.Timeout = TimeSpan.FromMinutes(10);
+                    // CircuitBreaker.SamplingDuration must be >= 2x AttemptTimeout.
+                    options.CircuitBreaker.SamplingDuration = TimeSpan.FromMinutes(10);
+                }
+            });
 
             // Turn on service discovery by default
             http.AddServiceDiscovery();

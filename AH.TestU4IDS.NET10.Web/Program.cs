@@ -5,6 +5,7 @@ using AH.TestU4IDS.NET10.Web.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.Extensions.Http.Resilience;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -101,7 +102,23 @@ builder.Services.AddOutputCache();
 builder.Services.AddHttpClient<WeatherApiClient>(client =>
     {
         client.BaseAddress = new("https://parentapi");
+
+        // Backstop timeout. Must be longer than the resilience TotalRequestTimeout below
+        // so the resilience pipeline (not HttpClient) governs cancellation.
+        client.Timeout = TimeSpan.FromMinutes(5);
     });
+
+// Raise the Aspire standard resilience timeouts for this client only. The shared
+// AddStandardResilienceHandler in ServiceDefaults defaults TotalRequestTimeout to 30s
+// (and AttemptTimeout to 10s), which is what was cutting requests off at 30 seconds.
+builder.Services.Configure<HttpStandardResilienceOptions>(nameof(WeatherApiClient), options =>
+{
+    options.TotalRequestTimeout.Timeout = TimeSpan.FromMinutes(2);
+    options.AttemptTimeout.Timeout = TimeSpan.FromMinutes(1);
+
+    // CircuitBreaker.SamplingDuration must be at least 2x the AttemptTimeout.
+    options.CircuitBreaker.SamplingDuration = TimeSpan.FromMinutes(2);
+});
 
 var app = builder.Build();
 
