@@ -1,0 +1,16 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.1.0">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UserSecretsId>80991fa2-5496-436b-a0a8-87d16f3416a3</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AH.TestU4IDS.NET10.ApiService\AH.TestU4IDS.NET10.ApiService.csproj" />
+    <ProjectReference Include="..\AH.TestU4IDS.NET10.Web\AH.TestU4IDS.NET10.Web.csproj" />
+  </ItemGroup>
+
+</Project>
