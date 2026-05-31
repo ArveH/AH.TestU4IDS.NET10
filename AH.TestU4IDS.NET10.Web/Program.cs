@@ -56,23 +56,29 @@ builder.Services.AddAuthentication(options =>
 
         options.Events.OnAuthenticationFailed = context =>
         {
-            var errorService = context.HttpContext.RequestServices.GetRequiredService<ErrorService>();
             var errorMessage = context.Exception?.Message ?? "An error occurred during authentication.";
-            errorService.SetError($"Login failed: {errorMessage}");
 
             context.HandleResponse();
-            context.Response.Redirect("/");
+            // Carry the error in the query string so it survives the redirect into a new
+            // request/DI scope and renders under static server-side rendering.
+            context.Response.Redirect($"/?authError={Uri.EscapeDataString($"Login failed: {errorMessage}")}");
             return Task.CompletedTask;
         };
 
         options.Events.OnRemoteFailure = context =>
         {
-            var errorService = context.HttpContext.RequestServices.GetRequiredService<ErrorService>();
-            var errorMessage = context.Failure?.Message ?? context.Request.Query["error"].ToString() ?? "An error occurred during authentication.";
-            errorService.SetError($"Login failed: {errorMessage}");
+            var errorMessage = context.Failure?.Message
+                ?? context.Request.Query["error_description"].ToString()
+                ?? context.Request.Query["error"].ToString();
+            if (string.IsNullOrWhiteSpace(errorMessage))
+            {
+                errorMessage = "An error occurred during authentication.";
+            }
 
             context.HandleResponse();
-            context.Response.Redirect("/");
+            // Carry the error in the query string so it survives the redirect into a new
+            // request/DI scope and renders under static server-side rendering.
+            context.Response.Redirect($"/?authError={Uri.EscapeDataString($"Login failed: {errorMessage}")}");
             return Task.CompletedTask;
         };
     });
