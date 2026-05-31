@@ -2,5 +2,6 @@
   <Project Path="AH.TestU4IDS.NET10.AppHost/AH.TestU4IDS.NET10.AppHost.csproj" />
   <Project Path="AH.TestU4IDS.NET10.ParentAPI/AH.TestU4IDS.NET10.ParentAPI.csproj" />
   <Project Path="AH.TestU4IDS.NET10.ServiceDefaults/AH.TestU4IDS.NET10.ServiceDefaults.csproj" />
+  <Project Path="AH.TestU4IDS.NET10.WeatherApi/AH.TestU4IDS.NET10.WeatherApi.csproj" />
   <Project Path="AH.TestU4IDS.NET10.Web/AH.TestU4IDS.NET10.Web.csproj" />
 </Solution>

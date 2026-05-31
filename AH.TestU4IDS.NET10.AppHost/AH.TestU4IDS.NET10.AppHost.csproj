@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AH.TestU4IDS.NET10.ParentAPI\AH.TestU4IDS.NET10.ParentAPI.csproj" />
+    <ProjectReference Include="..\AH.TestU4IDS.NET10.WeatherApi\AH.TestU4IDS.NET10.WeatherApi.csproj" />
     <ProjectReference Include="..\AH.TestU4IDS.NET10.Web\AH.TestU4IDS.NET10.Web.csproj" />
   </ItemGroup>
 

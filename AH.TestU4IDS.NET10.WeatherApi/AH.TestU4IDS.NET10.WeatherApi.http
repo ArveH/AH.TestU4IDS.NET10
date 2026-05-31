@@ -1,0 +1,6 @@
+@AH.TestU4IDS.NET10.WeatherApi_HostAddress = http://localhost:5174
+
+GET {{AH.TestU4IDS.NET10.WeatherApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
