@@ -1,6 +1,16 @@
 ﻿<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">AH.TestU4IDS.NET10</a>
+        <div class="d-flex flex-column">
+            <a class="navbar-brand mb-0" href="">Unit4 Auth Testing</a>
+            <AuthorizeView>
+                <Authorized>
+                    <small class="text-white-50">
+                        <span class="bi bi-person-fill" aria-hidden="true"></span>
+                        @context.User.Identity?.Name
+                    </small>
+                </Authorized>
+            </AuthorizeView>
+        </div>
     </div>
 </div>
 
@@ -28,12 +38,6 @@
 
         <AuthorizeView>
             <Authorized>
-                <div class="nav-item px-3">
-                    <span class="nav-link">
-                        <span class="bi bi-person-fill" aria-hidden="true"></span>
-                        @context.User.Identity?.Name
-                    </span>
-                </div>
                 <div class="nav-item px-3">
                     <form action="authentication/logout" method="post">
                         <AntiforgeryToken />
