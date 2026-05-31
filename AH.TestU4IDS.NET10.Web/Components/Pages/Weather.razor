@@ -2,7 +2,9 @@
 @attribute [StreamRendering(true)]
 @attribute [OutputCache(Duration = 5)]
 
+@using AH.TestU4IDS.NET10.Web.Services
 @inject WeatherApiClient WeatherApi
+@inject ErrorService ErrorService
 
 <PageTitle>Weather</PageTitle>
 
@@ -10,7 +12,13 @@
 
 <p>This component demonstrates showing data loaded from a backend API service.</p>
 
-@if (forecasts == null)
+@if (_errorMessage is not null)
+{
+    <div class="alert alert-danger" role="alert">
+        @_errorMessage
+    </div>
+}
+else if (forecasts == null)
 {
     <p><em>Loading...</em></p>
 }
@@ -41,9 +49,20 @@ else
 
 @code {
     private WeatherForecast[]? forecasts;
+    private string? _errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
-        forecasts = await WeatherApi.GetWeatherAsync();
+        try
+        {
+            forecasts = await WeatherApi.GetWeatherAsync();
+        }
+        catch (WeatherApiException ex)
+        {
+            // The exception message is already user-friendly and the underlying
+            // cause has been logged by WeatherApiClient.
+            _errorMessage = ex.Message;
+            ErrorService.SetError(ex.Message);
+        }
     }
 }
