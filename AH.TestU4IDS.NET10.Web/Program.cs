@@ -64,7 +64,7 @@ builder.Services.AddOutputCache();
 
 builder.Services.AddHttpClient<WeatherApiClient>(client =>
     {
-        client.BaseAddress = new("https://apiservice");
+        client.BaseAddress = new("https://parentapi");
     });
 
 var app = builder.Build();

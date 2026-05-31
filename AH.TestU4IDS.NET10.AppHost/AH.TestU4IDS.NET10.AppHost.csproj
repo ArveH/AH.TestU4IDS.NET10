@@ -9,7 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AH.TestU4IDS.NET10.ApiService\AH.TestU4IDS.NET10.ApiService.csproj" />
     <ProjectReference Include="..\AH.TestU4IDS.NET10.ParentAPI\AH.TestU4IDS.NET10.ParentAPI.csproj" />
     <ProjectReference Include="..\AH.TestU4IDS.NET10.Web\AH.TestU4IDS.NET10.Web.csproj" />
   </ItemGroup>
