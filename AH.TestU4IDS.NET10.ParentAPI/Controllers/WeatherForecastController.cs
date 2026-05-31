@@ -5,7 +5,7 @@ namespace AH.TestU4IDS.NET10.ParentAPI.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-[Authorize(Policy = "ParentApiScope")]
+[Authorize(Policy = "UserTrailPolicy")]
 public class WeatherForecastController : ControllerBase
 {
     private static readonly string[] Summaries =
