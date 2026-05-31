@@ -1,5 +1,6 @@
 namespace AH.TestU4IDS.NET10.Web;
 
+using System.Net;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
 
@@ -38,11 +39,31 @@ public class WeatherApiClient(HttpClient httpClient, ILogger<WeatherApiClient> l
             throw new WeatherApiException(
                 "The weather service did not respond in time. Please try again later.", ex);
         }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            logger.LogError(ex, "The weather API rejected the request as unauthorized (401). No valid access token was sent.");
+            throw new WeatherApiException(
+                "You are not authorized to view weather data. Please sign in and try again.", ex);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Forbidden)
+        {
+            logger.LogError(ex, "The weather API rejected the request as forbidden (403). The access token is missing the required scope.");
+            throw new WeatherApiException(
+                "You do not have permission to view weather data.", ex);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode is not null)
+        {
+            // The service responded, but with an error status (e.g. 5xx). It is reachable.
+            logger.LogError(ex, "The weather API responded with an error status code {StatusCode}.", (int)ex.StatusCode);
+            throw new WeatherApiException(
+                "The weather service returned an error. Please try again later.", ex);
+        }
         catch (HttpRequestException ex)
         {
+            // No status code means the request never reached the service (DNS, connection refused, TLS, etc.).
             logger.LogError(ex, "Unable to reach the weather API.");
             throw new WeatherApiException(
-                "Unable to load weather data because the weather service is unavailable.", ex);
+                "Unable to load weather data because the weather service could not be reached.", ex);
         }
     }
 }
