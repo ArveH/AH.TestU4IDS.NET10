@@ -1,27 +1,27 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Net.Http.Headers;
 
 namespace AH.TestU4IDS.NET10.ParentAPI.Controllers;
 
 [ApiController]
 [Route("[controller]")]
 [Authorize(Policy = "UserTrailPolicy")]
-public class WeatherForecastController : ControllerBase
+public class WeatherForecastController(IHttpClientFactory httpClientFactory) : ControllerBase
 {
-    private static readonly string[] Summaries =
-    [
-        "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-    ];
-
     [HttpGet(Name = "GetWeatherForecast")]
-    public IEnumerable<WeatherForecast> Get()
+    public async Task<ActionResult<IEnumerable<WeatherForecast>>> GetAsync(CancellationToken cancellationToken)
     {
-        return Enumerable.Range(1, 5).Select(index => new WeatherForecast
-        {
-            Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            TemperatureC = Random.Shared.Next(-20, 55),
-            Summary = Summaries[Random.Shared.Next(Summaries.Length)]
-        })
-        .ToArray();
+        var accessToken = HttpContext.Request.Headers.Authorization
+            .ToString()
+            .Replace("Bearer ", "", StringComparison.OrdinalIgnoreCase);
+
+        var client = httpClientFactory.CreateClient("WeatherApi");
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        var forecasts = await client.GetFromJsonAsync<IEnumerable<WeatherForecast>>(
+            "/WeatherForecast", cancellationToken);
+
+        return Ok(forecasts);
     }
 }

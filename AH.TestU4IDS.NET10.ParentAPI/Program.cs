@@ -64,6 +64,11 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+builder.Services.AddHttpClient("WeatherApi", client =>
+{
+    client.BaseAddress = new("https://weatherapi");
+});
+
 var app = builder.Build();
 
 app.MapHealthChecks("/health");
