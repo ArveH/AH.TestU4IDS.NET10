@@ -9,16 +9,21 @@ builder.AddServiceDefaults();
 // Add services to the container.
 
 // Add authentication
-var audience = builder.Configuration["JwtSettings:Audience"];
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        options.Authority = builder.Configuration["JwtSettings:Authority"];
+        var authority = builder.Configuration["JwtSettings:Authority"];
+        var audience = builder.Configuration["JwtSettings:Audience"];
+
+        ArgumentException.ThrowIfNullOrWhiteSpace(authority);
+        ArgumentException.ThrowIfNullOrWhiteSpace(audience);
+
+        options.Authority = authority;
         options.MapInboundClaims = false;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateAudience = true,
-            ValidAudience = audience,
+            ValidAudience = audience
         };
     });
 
