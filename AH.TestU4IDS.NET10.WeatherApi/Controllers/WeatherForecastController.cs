@@ -1,10 +1,14 @@
+using AH.TestU4IDS.NET10.WeatherApi.Extensions;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AH.TestU4IDS.NET10.WeatherApi.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class WeatherForecastController : ControllerBase
+[Authorize(Policy = "UserTrailPolicy")]
+public class WeatherForecastController(ILogger<WeatherForecastController> logger) : ControllerBase
 {
     private static readonly string[] Summaries =
     [
@@ -12,14 +16,20 @@ public class WeatherForecastController : ControllerBase
     ];
 
     [HttpGet(Name = "GetWeatherForecast")]
-    public IEnumerable<WeatherForecast> Get()
+    public async Task<IEnumerable<WeatherForecast>> GetAsync()
     {
-        return Enumerable.Range(1, 5).Select(index => new WeatherForecast
+        var accessToken = await HttpContext.GetTokenAsync("access_token");
+
+        if (!string.IsNullOrWhiteSpace(accessToken))
+        {
+            logger.LogInformation("Access token claims: {ClaimsJson}", accessToken.PrettifyToken());
+        }
+
+        return [.. Enumerable.Range(1, 5).Select(index => new WeatherForecast
         {
             Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
             TemperatureC = Random.Shared.Next(-20, 55),
             Summary = Summaries[Random.Shared.Next(Summaries.Length)]
-        })
-        .ToArray();
+        })];
     }
 }

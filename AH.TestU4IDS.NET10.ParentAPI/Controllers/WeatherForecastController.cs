@@ -1,4 +1,5 @@
 using Duende.IdentityModel.Client;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -20,9 +21,13 @@ public class WeatherForecastController(
     [HttpGet(Name = "GetWeatherForecast")]
     public async Task<ActionResult<IEnumerable<WeatherForecast>>> GetAsync(CancellationToken cancellationToken)
     {
-        var userAccessToken = HttpContext.Request.Headers.Authorization
-            .ToString()
-            .Replace("Bearer ", "", StringComparison.OrdinalIgnoreCase);
+        var userAccessToken = await HttpContext.GetTokenAsync("access_token");
+        if (userAccessToken == null) {
+            return Problem(
+                title: "User access token not found.",
+                detail: "The incoming request did not contain an access token.",
+                statusCode: StatusCodes.Status401Unauthorized);
+        }
 
         var (agentAccessToken, error) = await ExchangeTokenAsync(userAccessToken, cancellationToken);
         if (agentAccessToken is null)
@@ -53,13 +58,6 @@ public class WeatherForecastController(
         }
     }
 
-    /// <summary>
-    /// Exchanges the incoming user access token for a new access token using the
-    /// custom "agent_delegation" extension grant. The token endpoint is resolved
-    /// from the authority's discovery document (.well-known/openid-configuration).
-    /// Returns the access token on success, or a descriptive error message on failure;
-    /// it never throws so the request can fail gracefully.
-    /// </summary>
     private async Task<(string? AccessToken, string? Error)> ExchangeTokenAsync(
         string userAccessToken, CancellationToken cancellationToken)
     {
@@ -107,8 +105,6 @@ public class WeatherForecastController(
 
         if (response.IsError)
         {
-            // Covers protocol errors as well as exceptions captured by IdentityModel
-            // (response.ErrorType == ResponseErrorType.Exception, response.Exception).
             logger.LogError(
                 response.Exception,
                 "Token exchange failed. ErrorType: {ErrorType}, Error: {Error}",
